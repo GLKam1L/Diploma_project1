@@ -1,6 +1,5 @@
-package mirea.diploma_project1.domain;
+package mirea.diploma_project1.service;
 
-import mirea.diploma_project1.repo.FileStorageService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -15,8 +14,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
+
+
 @Service
-public class FileStorageServiceImpl implements FileStorageService {
+public class FilesStorageServiceImpl implements FilesStorageService {
     private final Path root = Paths.get("./uploads");
 
     @Override
@@ -24,16 +25,16 @@ public class FileStorageServiceImpl implements FileStorageService {
         try {
             Files.createDirectories(root);
         } catch (IOException e) {
-            throw new RuntimeException("Could not initialize folder upload!");
+            throw new RuntimeException("Could not initialize folder for upload!");
         }
     }
 
     @Override
-    public void save (MultipartFile file){
-        try {
+    public void save(MultipartFile file){
+        try{
             Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-        } catch (IOException e) {
-            if (e instanceof FileAlreadyExistsException) {
+        } catch (Exception e) {
+            if (e instanceof FileAlreadyExistsException){
                 throw new RuntimeException("A file of that name already exists.");
             }
             throw new RuntimeException(e.getMessage());
@@ -41,18 +42,28 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
-    public Resource load (String filename) {
-        try {
+    public Resource load(String filename){
+        try{
             Path file = root.resolve(filename);
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
                 return resource;
-            } else{
-              throw new RuntimeException("Could not read the file!");
+            } else {
+                throw new RuntimeException("Could not read the file!");
             }
-        } catch (MalformedURLException e){
-            throw new RuntimeException("Error: " +e.getMessage());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean delete(String filename) {
+        try {
+            Path file = root.resolve(filename);
+            return Files.deleteIfExists(file);
+        } catch (IOException e) {
+            throw new RuntimeException("Error: " + e.getMessage());
         }
     }
 
@@ -63,10 +74,12 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public Stream<Path> loadAll() {
-        try {
+        try{
             return Files.walk(this.root, 1).filter(path -> !path.equals(this.root)).map(this.root::relativize);
         } catch (IOException e) {
-            throw new RuntimeException("Could not load the files!");
+            throw new RuntimeException("Could not losf the files!");
         }
     }
+
+
 }
